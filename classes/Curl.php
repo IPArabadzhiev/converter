@@ -15,12 +15,31 @@ class Curl
 
     public function get($url)
     {
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_USERAGENT, $this->userAgent);
-        curl_setopt($ch, CURLOPT_REFERER, $this->referer);
+        $ch = $this->initCurl($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         $content = curl_exec ($ch);
         curl_close ($ch);
         return $content;
+    }
+
+    public function getFile($remoteFileUrl, $localFileUrl)
+    {
+        $ch = $this->initCurl($remoteFileUrl);
+        $fp = fopen($localFileUrl, 'w');
+        curl_setopt($ch, CURLOPT_FILE, $fp);
+        echo curl_exec($ch) . PHP_EOL;
+        $content = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        fclose($fp);
+        return $content;
+    }
+
+    private function initCurl($url)
+    {
+        $url = preg_replace('/\s/', '+', $url);
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_USERAGENT, $this->userAgent);
+        curl_setopt($ch, CURLOPT_REFERER, $this->referer);
+        return $ch;
     }
 }
