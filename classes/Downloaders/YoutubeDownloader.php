@@ -6,7 +6,11 @@ class YoutubeDownloader extends AbstractDownloader
 {
     private $baseUrl = 'https://www.youtube.com/';
     private $videoInfoUrl = 'get_video_info?video_id=%s&el=embedded&ps=default&eurl=&hl=en_US';
+    private $embedUrl = 'embed/%s';
     private $curlHandle;
+
+    private $triesCount = 0;
+    private $statusCode = 0;
 
     private $videoFormats = [
         '13' => ['3gp', '240p', '10'],
@@ -53,6 +57,7 @@ class YoutubeDownloader extends AbstractDownloader
         ];
 
         if ($videoId) {
+            $videoEmbedUrl = $this->baseUrl . sprintf($this->embedUrl, $videoId);
             $videoInfoUrl = $this->baseUrl . sprintf($this->videoInfoUrl, $videoId);
             $videoInfo = $this->getCurlHandle()->get($videoInfoUrl);
             $videoUrlData = $this->getVideoUrlData($videoInfo);
@@ -82,16 +87,17 @@ class YoutubeDownloader extends AbstractDownloader
                 {
                     touch($video);
                     chmod($video, 0775);
-                    $statusCode = $this->getCurlHandle()->getFile($videoUrl, $video);
-                    $triesCount = 0;
-                    while ($statusCode !== 200 && $triesCount < 100) {
-                        sleep(1);
-                        $statusCode = $this->getCurlHandle()->getFile($videoUrl, $video);
-                        $triesCount++;
+                    $this->statusCode = $this->getCurlHandle()->getFile($videoUrl, $video);
+                    while ($this->statusCode !== 200 && $this->triesCount < 0) {
+                        $this->download($url);
+                        $this->triesCount++;
                     }
+                    $parts = parse_url($videoUrl);
+                    parse_str($parts['query'], $query);
                     $result = [
-                        'success' => $statusCode === 200,
-                        'tries' => $triesCount
+                        'success' => $this->statusCode === 200,
+                        'tries' => $this->triesCount,
+                        'url' => $query
                     ];
                 } else {
                     $result = [
