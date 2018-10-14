@@ -14,14 +14,9 @@ require_once 'autoload.php';
 use Router\Request;
 use Router\Router;
 
-use Downloaders\YoutubeDownloader;
-
 $router = new Router(new Request());
 
-$router->get('/download', function($request) {
-    $ytd = new YoutubeDownloader();
-    $ytd->download('https://www.youtube.com/watch?v=Kyx2PsuwomE');
-});
+$router->get('/download', 'DownloadController@downloadVideo');
 
 $router->get('/', function($request) {
     echo '2';

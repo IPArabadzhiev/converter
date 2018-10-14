@@ -59,9 +59,9 @@ class Router
         }
 
         list($controller, $method) = explode('@', $exec);
-        $controller = "Controllers/$controller.php";
+        $controller = "Controllers\\$controller";
         try {
-            if (class_exists($controller)) {
+            if (class_exists($controller, true)) {
                 $controllerObject = new $controller();
 
                 if (method_exists($controllerObject, $method)) {
