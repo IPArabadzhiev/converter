@@ -83,6 +83,8 @@ class YoutubeDownloader extends AbstractDownloader
                     var_dump($videoToDownload);
 
                     // Download the video.
+                    var_dump($videoUrl);
+                    var_dump($video);
                     $s = $this->getCurlHandle()->getFile($videoUrl, $video);
                     var_dump($s);
                     echo 'Download complete';
