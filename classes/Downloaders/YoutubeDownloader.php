@@ -48,12 +48,15 @@ class YoutubeDownloader extends AbstractDownloader
     public function download($url)
     {
         $videoId = $this->getVideoId($url);
+        $result = [
+            'success' => false
+        ];
 
         if ($videoId) {
             $videoInfoUrl = $this->baseUrl . sprintf($this->videoInfoUrl, $videoId);
             $videoInfo = $this->getCurlHandle()->get($videoInfoUrl);
             $videoUrlData = $this->getVideoUrlData($videoInfo);
-            
+
             if ($videoUrlData) {
                 usort($videoUrlData, function ($videoA, $videoB) {
                     return $videoA['pref'] - $videoB['pref'];
@@ -75,27 +78,35 @@ class YoutubeDownloader extends AbstractDownloader
                  *  If the video does not already exist in the download directory,
                  *  try to download the video and the video preview image.
                  */
-                if(true || ! file_exists($video))
+                if(! file_exists($video))
                 {
                     touch($video);
                     chmod($video, 0775);
-
-                    var_dump($videoToDownload);
-
-                    // Download the video.
-                    var_dump($videoUrl);
-                    var_dump($video);
-                    $s = $this->getCurlHandle()->getFile($videoUrl, $video);
-                    var_dump($s);
-                    echo 'Download complete';
-                    $audio =  $this->getDownloadsDir() . $videoTitle . '.mp3';
-                    $cmd = "ffmpeg -i \"$video\" -ar 44100 -ab 320 -ac 2 \"$audio\"";
-                    $f = exec($cmd);
-                    var_dump($f);
-                    echo 'Converting to mp3 complete';
+                    $statusCode = $this->getCurlHandle()->getFile($videoUrl, $video);
+                    $triesCount = 0;
+                    while ($statusCode !== 200 && $triesCount < 100) {
+                        sleep(1);
+                        $statusCode = $this->getCurlHandle()->getFile($videoUrl, $video);
+                        $triesCount++;
+                    }
+                    $result = [
+                        'success' => $statusCode === 200,
+                        'tries' => $triesCount
+                    ];
+                } else {
+                    $result = [
+                        'success' => true,
+                        'message' => 'File existed'
+                    ];
                 }
+
+                $audio =  $this->getDownloadsDir() . $videoTitle . '.mp3';
+                $cmd = "ffmpeg -i \"$video\" -ar 44100 -ab 320 -ac 2 \"$audio\"";
+                $f = exec($cmd);
             }
         }
+
+        return $result;
     }
 
     private function getVideoId($url)

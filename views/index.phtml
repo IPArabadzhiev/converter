@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Converter</title>
+    <link href="https://fonts.googleapis.com/css?family=Kodchasan" rel="stylesheet">
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+            background-color: rgba(222, 37, 21, 0.2);
+        }
+
+        * {
+            font-family: 'Kodchasan', sans-serif;
+        }
+
+        .section {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            background-color: rgba(0, 182, 245, 0.42);
+            box-shadow: 1px 1px 5px rgba(0, 151, 255, 0.44);
+            box-sizing: border-box;
+        }
+
+        .site-header {
+            color: #de2515;
+        }
+
+        #loading {
+            display: none;
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-color: rgba(255, 255, 255, 0.80);
+            color: #de2515;
+        }
+
+        #loading > div {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            text-align: center;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <div class="centered section">
+        <h1 class="site-header">Video Downloader and converter</h1>
+        <input type="text" id="download-url">
+        <button id="download-button">Download</button>
+    </div>
+    <div id="loading">
+        <div>
+            <div><img src="../spinner.svg" alt="Loading"></div>
+            <h1 id="loading-text"></h1>
+        </div>
+    </div>
+</body>
+<script>
+    const loadingMessages = [
+        {time: 20, message: 'Almost there...'},
+        {time: 16, message: 'Finishing touches...'},
+        {time: 12, message: 'Lunch break...'},
+        {time: 8, message: 'Downloading important modules...'},
+        {time: 4, message: 'Making plans...'},
+        {time: 0, message: 'Gathering work group...'}
+    ];
+    document.getElementById('download-button').addEventListener('click', function (event) {
+        event.preventDefault();
+
+        const downloadStartTime = new Date().getTime();
+        document.getElementById('loading').style.display = 'block';
+        const updateLoadingTextInterval = setInterval(function () {
+            const secondsPassed = (new Date().getTime() - downloadStartTime) / 1000;
+            for (const loadingMessageIndex in loadingMessages) {
+                const loadingMessage = loadingMessages[loadingMessageIndex];
+                if (secondsPassed % 25 > loadingMessage.time) {
+                    document.getElementById('loading-text').innerText = loadingMessage.message;
+                    break;
+                }
+            }
+        }, 1000);
+        fetch('/download', {
+            method: 'POST',
+            body: JSON.stringify({
+                url: document.getElementById('download-url').value
+            })
+        }).then(function (response) {
+            return response.text();
+        }).then(function (html) {
+            document.getElementById('loading').style.display = 'none';
+            clearInterval(updateLoadingTextInterval);
+        });
+    }, false);
+</script>
+</html>

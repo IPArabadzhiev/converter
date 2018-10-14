@@ -57,7 +57,6 @@ class Router
             $this->defaultRequestHandler();
             return;
         }
-
         list($controller, $method) = explode('@', $exec);
         $controller = "Controllers\\$controller";
         try {
@@ -65,7 +64,10 @@ class Router
                 $controllerObject = new $controller();
 
                 if (method_exists($controllerObject, $method)) {
-                    echo $controllerObject->$method((array) $this->request);
+                    $result = $controllerObject->$method((array) $this->request->getBody());
+                    if (! empty($result)) {
+                        echo json_encode($result);
+                    }
                 } else {
                     echo "Undefined method $method in $controller";
                 }

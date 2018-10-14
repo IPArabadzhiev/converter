@@ -30,18 +30,14 @@ class Request implements RequestInterface
     {
         if($this->requestMethod === "GET")
         {
-            return [];
+            return ['a' => 5];
         }
         if ($this->requestMethod == "POST")
         {
-            $result = array();
-            foreach($_POST as $key => $value)
-            {
-                $result[$key] = filter_input(INPUT_POST, $key, FILTER_SANITIZE_SPECIAL_CHARS);
-            }
-            return $result;
+            $postParams = array_merge($_POST, json_decode(file_get_contents('php://input'), true));
+            return $postParams;
         }
 
-        return [];
+        return  ['a' => 10];
     }
 }

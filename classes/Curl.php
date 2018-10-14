@@ -27,7 +27,7 @@ class Curl
         $ch = $this->initCurl($remoteFileUrl);
         $fp = fopen($localFileUrl, 'w');
         curl_setopt($ch, CURLOPT_FILE, $fp);
-        echo curl_exec($ch) . PHP_EOL;
+        curl_exec($ch);
         $content = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         fclose($fp);
