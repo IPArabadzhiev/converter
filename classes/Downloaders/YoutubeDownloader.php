@@ -11,6 +11,9 @@ class YoutubeDownloader extends AbstractDownloader
 
     private $triesCount = 0;
     private $statusCode = 0;
+    private $embedPage;
+    private $videoUrl;
+    private $videoId;
 
     private $videoFormats = [
         '13' => ['3gp', '240p', '10'],
@@ -51,13 +54,20 @@ class YoutubeDownloader extends AbstractDownloader
 
     public function download($url)
     {
-        $videoId = $this->getVideoId($url);
+
+        $this->setVideoUrl($url);
+
+        $videoId = $this->getVideoId();
         $result = [
             'success' => false
         ];
 
         if ($videoId) {
-            $videoEmbedUrl = $this->baseUrl . sprintf($this->embedUrl, $videoId);
+            $playerJsUrl = $this->getPlayerJsUrl($videoId);
+            print_r($playerJsUrl . PHP_EOL);
+            $sts = $this->getSTS();
+            print_r($sts);
+            return;
             $videoInfoUrl = $this->baseUrl . sprintf($this->videoInfoUrl, $videoId);
             $videoInfo = $this->getCurlHandle()->get($videoInfoUrl);
             $videoUrlData = $this->getVideoUrlData($videoInfo);
@@ -115,24 +125,28 @@ class YoutubeDownloader extends AbstractDownloader
         return $result;
     }
 
-    private function getVideoId($url)
+    private function getVideoId()
     {
-        $pattern = '#^(?:https?://)?';    # Optional URL scheme. Either http or https.
-        $pattern .= '(?:www\.)?';         #  Optional www subdomain.
-        $pattern .= '(?:';                #  Group host alternatives:
-        $pattern .=   'youtu\.be/';       #    Either youtu.be,
-        $pattern .=   '|youtube\.com';    #    or youtube.com
-        $pattern .=   '(?:';              #    Group path alternatives:
-        $pattern .=     '/embed/';        #      Either /embed/,
-        $pattern .=     '|/v/';           #      or /v/,
-        $pattern .=     '|/watch\?v=';    #      or /watch?v=,
-        $pattern .=     '|/watch\?.+&v='; #      or /watch?other_param&v=
-        $pattern .=   ')';                #    End path alternatives.
-        $pattern .= ')';                  #  End host alternatives.
-        $pattern .= '([\w-]{11})';        # 11 characters (Length of Youtube video ids).
-        $pattern .= '(?:.+)?$#x';         # Optional other ending URL parameters.
-        preg_match($pattern, $url, $matches);
-        return (isset($matches[1])) ? $matches[1] : false;
+        if (empty($this->videoId)) {
+            $pattern = '#^(?:https?://)?';    # Optional URL scheme. Either http or https.
+            $pattern .= '(?:www\.)?';         #  Optional www subdomain.
+            $pattern .= '(?:';                #  Group host alternatives:
+            $pattern .= 'youtu\.be/';       #    Either youtu.be,
+            $pattern .= '|youtube\.com';    #    or youtube.com
+            $pattern .= '(?:';              #    Group path alternatives:
+            $pattern .= '/embed/';        #      Either /embed/,
+            $pattern .= '|/v/';           #      or /v/,
+            $pattern .= '|/watch\?v=';    #      or /watch?v=,
+            $pattern .= '|/watch\?.+&v='; #      or /watch?other_param&v=
+            $pattern .= ')';                #    End path alternatives.
+            $pattern .= ')';                  #  End host alternatives.
+            $pattern .= '([\w-]{11})';        # 11 characters (Length of Youtube video ids).
+            $pattern .= '(?:.+)?$#x';         # Optional other ending URL parameters.
+            preg_match($pattern, $this->getVideoUrl(), $matches);
+            $this->videoId = (isset($matches[1])) ? $matches[1] : false;
+        }
+
+        return $this->videoId;
     }
 
     private function getVideoUrlData($videoInfo)
@@ -171,5 +185,45 @@ class YoutubeDownloader extends AbstractDownloader
             }
             return $videos;
         }
+    }
+
+    private function getEmbedPage()
+    {
+        if (empty($this->embedPage)) {
+            $videoEmbedUrl = $this->baseUrl . sprintf($this->embedUrl, $this->getVideoId());
+            $this->embedPage = $this->getCurlHandle()->get($videoEmbedUrl);
+        }
+
+        return $this->embedPage;
+    }
+
+    private function getPlayerJsUrl()
+    {
+        preg_match_all('/<script.*src=["\'](.*\/player.*.js)["\']/', $this->getEmbedPage(), $matches);
+        if (isset($matches[1][0])) {
+            return $matches[1][0];
+        } else {
+            throw new \Exception('Cannot find video player');
+        }
+    }
+
+    private function getSTS()
+    {
+        preg_match_all('/["\']sts["\']:\s*(.*?)[,;}]/', $this->getEmbedPage(), $matches);
+        if (isset($matches[1][0])) {
+            return $matches[1][0];
+        } else {
+            throw new \Exception('Cannot find sts');
+        }
+    }
+
+    private function getVideoUrl()
+    {
+        return $this->videoUrl;
+    }
+
+    private function setVideoUrl($videoUrl)
+    {
+        $this->videoUrl = $videoUrl;
     }
 }
