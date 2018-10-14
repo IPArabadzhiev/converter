@@ -5,13 +5,15 @@ namespace Downloaders;
 class YoutubeDownloader extends AbstractDownloader
 {
     private $baseUrl = 'https://www.youtube.com/';
-    private $videoInfoUrl = 'get_video_info?video_id=%s&el=embedded&ps=default&eurl=&hl=en_US';
+    private $videoInfoUrl = 'get_video_info?video_id=%s&el=embedded&ps=default&eurl=&hl=en_US&sts=%s';
     private $embedUrl = 'embed/%s';
     private $curlHandle;
 
     private $triesCount = 0;
     private $statusCode = 0;
     private $embedPage;
+    private $playerJs;
+    private $playerJsUrl;
     private $videoUrl;
     private $videoId;
 
@@ -63,13 +65,16 @@ class YoutubeDownloader extends AbstractDownloader
         ];
 
         if ($videoId) {
-            $playerJsUrl = $this->getPlayerJsUrl($videoId);
-            print_r($playerJsUrl . PHP_EOL);
+//            $playerJsUrl = $this->getPlayerJsUrl($videoId);
+//            print_r($playerJsUrl . PHP_EOL);
+//            print_r($this->getPlayerJs());
+//            return;
             $sts = $this->getSTS();
-            print_r($sts);
-            return;
-            $videoInfoUrl = $this->baseUrl . sprintf($this->videoInfoUrl, $videoId);
+//            print_r($sts . PHP_EOL);
+            $videoInfoUrl = $this->baseUrl . sprintf($this->videoInfoUrl, $videoId, $sts);
+//            print_r($videoInfoUrl . PHP_EOL);
             $videoInfo = $this->getCurlHandle()->get($videoInfoUrl);
+//            print_r($videoInfo . PHP_EOL);
             $videoUrlData = $this->getVideoUrlData($videoInfo);
 
             if ($videoUrlData) {
@@ -93,15 +98,18 @@ class YoutubeDownloader extends AbstractDownloader
                  *  If the video does not already exist in the download directory,
                  *  try to download the video and the video preview image.
                  */
-                if(! file_exists($video))
+                if(true || ! file_exists($video))
                 {
                     touch($video);
                     chmod($video, 0775);
                     $this->statusCode = $this->getCurlHandle()->getFile($videoUrl, $video);
-                    while ($this->statusCode !== 200 && $this->triesCount < 0) {
-                        $this->download($url);
-                        $this->triesCount++;
+                    if ($this->statusCode === 403) {
+                        print_r($this->getPlayerJs());
                     }
+//                    while ($this->statusCode !== 200 && $this->triesCount < 0) {
+//                        $this->download($url);
+//                        $this->triesCount++;
+//                    }
                     $parts = parse_url($videoUrl);
                     parse_str($parts['query'], $query);
                     $result = [
@@ -197,14 +205,27 @@ class YoutubeDownloader extends AbstractDownloader
         return $this->embedPage;
     }
 
+    private function getPlayerJs()
+    {
+        if (empty($this->playerJs)) {
+            $this->playerJs = $this->getCurlHandle()->get($this->getPlayerJsUrl());
+        }
+
+        return $this->playerJs;
+    }
+
     private function getPlayerJsUrl()
     {
-        preg_match_all('/<script.*src=["\'](.*\/player.*.js)["\']/', $this->getEmbedPage(), $matches);
-        if (isset($matches[1][0])) {
-            return $matches[1][0];
-        } else {
-            throw new \Exception('Cannot find video player');
+        if (empty($this->playerJsUrl)) {
+            preg_match_all('/<script.*src=["\'](.*\/player.*.js)["\']/', $this->getEmbedPage(), $matches);
+            if (isset($matches[1][0])) {
+                $this->playerJsUrl = $this->baseUrl . $matches[1][0];
+            } else {
+                throw new \Exception('Cannot find video player');
+            }
         }
+
+        return $this->playerJsUrl;
     }
 
     private function getSTS()
