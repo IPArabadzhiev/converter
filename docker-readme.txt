@@ -6,3 +6,5 @@ docker container run -d -p 80:80 -v "C:\Development\converter":/var/www/html p3r
 
 -- youtube-dl
  youtube-dl https://www.youtube.com/watch?v=d-o3eB9sfls
+
+ youtube-dl -J https://www.youtube.com/watch?v=d-o3eB9sfls -- get json info of everything about the video
