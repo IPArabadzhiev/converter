@@ -34,7 +34,11 @@ class Request implements RequestInterface
         }
         if ($this->requestMethod == "POST")
         {
-            $postParams = array_merge($_POST, json_decode(file_get_contents('php://input'), true));
+            $paramsString = file_get_contents('php://input');
+            if ($paramsString === '') {
+                $paramsString = '{}';
+            }
+            $postParams = array_merge($_POST, json_decode($paramsString, true));
             return $postParams;
         }
 

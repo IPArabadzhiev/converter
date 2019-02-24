@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Converter</title>
+    <title>Converter Server</title>
     <link href="https://fonts.googleapis.com/css?family=Kodchasan" rel="stylesheet">
     <style>
         body {
@@ -74,31 +74,46 @@
         {time: 0, message: 'Gathering work group...'}
     ];
     document.getElementById('download-button').addEventListener('click', function (event) {
-        event.preventDefault();
-
-        const downloadStartTime = new Date().getTime();
-        document.getElementById('loading').style.display = 'block';
-        const updateLoadingTextInterval = setInterval(function () {
-            const secondsPassed = (new Date().getTime() - downloadStartTime) / 1000;
-            for (const loadingMessageIndex in loadingMessages) {
-                const loadingMessage = loadingMessages[loadingMessageIndex];
-                if (secondsPassed % 25 > loadingMessage.time) {
-                    document.getElementById('loading-text').innerText = loadingMessage.message;
-                    break;
-                }
-            }
-        }, 1000);
-        fetch('/download', {
-            method: 'POST',
-            body: JSON.stringify({
-                url: document.getElementById('download-url').value
-            })
-        }).then(function (response) {
-            return response.text();
-        }).then(function (html) {
-            document.getElementById('loading').style.display = 'none';
-            clearInterval(updateLoadingTextInterval);
-        });
-    }, false);
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/download', true);
+      xhr.send(null);
+      var timer;
+      timer = window.setInterval(function() {
+        if (xhr.readyState == XMLHttpRequest.DONE) {
+          window.clearTimeout(timer);
+          document.writeln('done <br />');
+        }
+        document.writeln('state: ' + xhr.readyState + '<br />');
+        console.log(xhr.responseText);
+        document.writeln('data: ' + xhr.responseText + '<br />');
+      }, 1000);
+    });
+    // document.getElementById('download-button').addEventListener('click', function (event) {
+    //     event.preventDefault();
+    //
+    //     const downloadStartTime = new Date().getTime();
+    //     document.getElementById('loading').style.display = 'block';
+    //     const updateLoadingTextInterval = setInterval(function () {
+    //         const secondsPassed = (new Date().getTime() - downloadStartTime) / 1000;
+    //         for (const loadingMessageIndex in loadingMessages) {
+    //             const loadingMessage = loadingMessages[loadingMessageIndex];
+    //             if (secondsPassed % 25 > loadingMessage.time) {
+    //                 document.getElementById('loading-text').innerText = loadingMessage.message;
+    //                 break;
+    //             }
+    //         }
+    //     }, 1000);
+    //     fetch('/download', {
+    //         method: 'POST',
+    //         body: JSON.stringify({
+    //             url: document.getElementById('download-url').value
+    //         })
+    //     }).then(function (response) {
+    //         return response.text();
+    //     }).then(function (html) {
+    //         document.getElementById('loading').style.display = 'none';
+    //         clearInterval(updateLoadingTextInterval);
+    //     });
+    // }, false);
 </script>
 </html>
