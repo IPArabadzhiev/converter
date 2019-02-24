@@ -50,7 +50,7 @@ class Router
     function resolve()
     {
         $methodDictionary = $this->{strtolower($this->request->requestMethod)};
-        $formattedRoute = $this->formatRoute($this->request->requestUri);
+        $formattedRoute = $this->formatRoute($this->request->redirectUrl);
         $exec = $methodDictionary[$formattedRoute];
         if(is_null($exec))
         {

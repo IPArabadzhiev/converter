@@ -28,9 +28,9 @@ class Request implements RequestInterface
     }
     public function getBody()
     {
-        if($this->requestMethod === "GET")
+        if ($this->requestMethod === "GET")
         {
-            return ['a' => 5];
+            return $_GET;
         }
         if ($this->requestMethod == "POST")
         {
