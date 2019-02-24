@@ -110,9 +110,7 @@ class YoutubedlDownloader
         $fileName = $fileName[0];
         $response['fileName'] = $fileName;
         $downloadsPath = self::DOWNLOADS_PATH;
-        if (file_exists("$downloadsPath/$fileName.$format")) {
-            $response['success'] = true;
-        } else {
+        if (! file_exists("$downloadsPath/$fileName.$format")) {
             $cmd = "cd $downloadsPath && youtube-dl --newline --extract-audio --audio-format $format $url";
             $this->disable_ob();
             popen($cmd, 'r');
@@ -128,6 +126,7 @@ class YoutubedlDownloader
             }
             pclose($proc);
         }
+        $response['success'] = true;
 
         return $response;
     }
